@@ -11,6 +11,9 @@ from .serializer import ShiftSerializer
 from .models import Shift
 import hashlib
 from trucks.models import Truck 
+from datetime import datetime, timezone
+
+now = datetime.now(timezone.utc)
 
 # Create your views here.
 
@@ -103,4 +106,56 @@ def get_all_shifts(request):
             'end_time': shift.end_time
         })
     return Response({"shifts": shift_data}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def gat_user_total_work_time(request):
+    username = request.data.get('username')
+    shifts = Shift.objects.filter(username=username)
+    datenow = datetime.now(timezone.utc)
+    total_time = datenow - datenow
+    for shift in shifts:
+        if shift.end_time is None:
+            total_time += datetime.now(timezone.utc) - shift.start_time
+        else:
+            total_time += shift.end_time - shift.start_time
+    if total_time.total_seconds() < 0:
+        total_time = datetime.now(timezone.utc) - datetime.now(timezone.utc)
+    return Response({total_time.total_seconds()}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def get_user_month_work_time(request):
+    username = request.data.get('username')
+    shifts = Shift.objects.filter(username=username, start_time__month=datetime.now(timezone.utc).month)
+    datenow = datetime.now(timezone.utc)
+    total_time = datenow - datenow
+    for shift in shifts:
+        if shift.start_time.month == datetime.now().month:
+            if shift.end_time is None:
+                total_time += datetime.now(timezone.utc) - shift.start_time
+            else:
+                total_time += shift.end_time - shift.start_time
+    print(total_time)
+    if total_time.total_seconds() < 0:
+        total_time = datetime.now(timezone.utc) - datetime.now(timezone.utc)
+    return Response({total_time.total_seconds()}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def get_user_today_work_time(request):
+    username = request.data.get('username')
+    shifts = Shift.objects.filter(username=username, start_time__date=datetime.now(timezone.utc).date())
+    if not shifts.exists():
+        return Response({'0'},status=status.HTTP_200_OK)
+    datenow = datetime.now(timezone.utc)
+    total_time = datenow - datenow
+    for shift in shifts:
+        if shift.start_time.month == datetime.now().today:
+            if shift.end_time is None:
+                total_time += datetime.now(timezone.utc) - shift.start_time
+            else:
+                total_time += shift.end_time - shift.start_time
+    print(total_time)
+    if total_time.total_seconds() < 0:
+        total_time = datetime.now(timezone.utc) - datetime.now(timezone.utc)
+    return Response({total_time.total_seconds()}, status=status.HTTP_200_OK)
 

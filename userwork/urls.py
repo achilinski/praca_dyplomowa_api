@@ -7,4 +7,6 @@ urlpatterns = [
     path('shifts/', views.get_shifts, name='get_shifts'),
     path('all/', views.get_all_shifts, name='get_all_shifts'),
     path('working/', views.is_still_working, name='is_still_working'),
+    path('month/', views.get_user_month_work_time, name='get_user_month_work_time'),
+    path('today/', views.get_user_today_work_time, name='get_user_day_work_time'),
 ]
