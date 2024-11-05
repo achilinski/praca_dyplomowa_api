@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .serializer import ShiftSerializer
-from .models import Shift
+from .models import Break, Shift
 import hashlib
 from trucks.models import Truck 
 from datetime import datetime, timezone
@@ -135,8 +135,8 @@ def get_user_month_work_time(request):
             else:
                 total_time += shift.end_time - shift.start_time
     print(total_time)
-    if total_time.total_seconds() < 0:
-        total_time = datetime.now(timezone.utc) - datetime.now(timezone.utc)
+    if total_time.total_seconds() <= 0:
+        total_time = 0
     return Response({total_time.total_seconds()}, status=status.HTTP_200_OK)
 
 
@@ -159,3 +159,41 @@ def get_user_today_work_time(request):
         total_time = datetime.now(timezone.utc) - datetime.now(timezone.utc)
     return Response({total_time.total_seconds()}, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def start_break(request):
+    username = request.data.get('username')
+    try:
+        shift = Shift.objects.get(username=username, end_time=None)
+    except Shift.DoesNotExist:
+        return Response({"error":"Shift not found"},status=status.HTTP_404_NOT_FOUND)
+    start_time = datetime.now()
+    break_time = Break.objects.create(shift=shift, start_time=start_time)
+    return Response({"success":"Break started"},status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def stop_break(request):
+    username = request.data.get('username')
+    try:
+        shift = Shift.objects.get(username=username, end_time=None)
+    except Shift.DoesNotExist:
+        return Response({"error":"Shift not found"},status=status.HTTP_404_NOT_FOUND)
+    try:
+        break_time = Break.objects.get(shift=shift, end_time=None)
+    except Break.DoesNotExist:
+        return Response({"error":"Break not found"},status=status.HTTP_404_NOT_FOUND)
+    break_time.end_time = datetime.now()
+    break_time.save()
+    return Response({"success":"Break ended"},status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def is_break(request):
+    username = request.data.get('username')
+    try:
+        shift = Shift.objects.get(username=username, end_time=None)
+    except Shift.DoesNotExist:
+        return Response({"error":"Shift not found"},status=status.HTTP_404_NOT_FOUND)
+    try:
+        break_time = Break.objects.get(shift=shift, end_time=None)
+    except Break.DoesNotExist:
+        return Response({"is_break": False}, status=status.HTTP_200_OK)
+    return Response({"is_break":True},status=status.HTTP_200_OK)
