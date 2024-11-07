@@ -24,9 +24,10 @@ def generate_name_hash(name: str) -> str:
 @api_view(['POST'])
 def create_truck(request):
     mialge = request.data.get('milage',0)
-    qr_code = request.data.get('qr_code')
+    #qr_code = request.data.get('qr_code')
     name = request.data.get('name')
-
+    if type(name) != str:
+        name = str(name)
     if not qr_code:
         qr_code = f"{generate_name_hash(name + str(Truck.objects.count() + 1))}"
 
@@ -59,7 +60,8 @@ def create_truck(request):
     return HttpResponse(img_bytes, content_type="image/png")
 
 @api_view(['GET'])
-def get_truck_by_qr(request, qr_code):
+def get_truck_by_qr(request):
+    qr_code = request.data.get('qr_code')
     try:
         truck = Truck.objects.get(qr_code=qr_code)
     except Truck.DoesNotExist:
