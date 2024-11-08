@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'trucks',
     'userwork',
     'gps',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [

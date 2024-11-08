@@ -9,7 +9,8 @@ class GpsPoint(models.Model):
     name = models.CharField(max_length=255, unique=False, null=True, default=None)
 
     def __str__(self) -> str:
-        return [self.lat, self.long]
+        #eturn [self.lat, self.long]
+        return f"{self.lat}, {self.long}"
     
 
 class GpsPointList(models.Model):

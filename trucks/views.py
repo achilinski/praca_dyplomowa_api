@@ -17,7 +17,7 @@ def generate_name_hash(name: str) -> str:
     sha256_hash = hashlib.sha256()
     sha256_hash.update(name_bytes)
     hash_bytes = sha256_hash.digest()
-    hash_base64 = base64.b64encode(hash_bytes).decode('utf-8')
+    hash_base64 = base64.urlsafe_b64encode(hash_bytes).decode('utf-8')
     
     return str(hash_base64[:10])
 
@@ -28,8 +28,7 @@ def create_truck(request):
     name = request.data.get('name')
     if type(name) != str:
         name = str(name)
-    if not qr_code:
-        qr_code = f"{generate_name_hash(name + str(Truck.objects.count() + 1))}"
+    qr_code = f"{generate_name_hash(name + str(Truck.objects.count() + 1))}"
 
     if not name:
         name = f"truck_{Truck.objects.count() + 1}"

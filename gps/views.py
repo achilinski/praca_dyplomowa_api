@@ -48,8 +48,8 @@ def create_gps_point(request):
     
     try:
         point = GpsPoint.objects.create(lat = lat, long = long, qr_code = qr_code, name = name)
-    except Exception:
-        return Response({Exception},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return Response({str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     return Response({"succes":"Point created"},status=status.HTTP_201_CREATED) 
 
