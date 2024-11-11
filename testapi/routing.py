@@ -1,6 +1,6 @@
 from django.urls import re_path
 
-from testapi.consumers import ChatConsumer
+from chat.consumers import ChatConsumer
 
 
 websocket_urlpatterns = [

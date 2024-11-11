@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'userwork',
     'gps',
     'drf_yasg',
-    'channels'
+    'channels',
+    'chat',
 ]
 
 MIDDLEWARE = [
