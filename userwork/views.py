@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime
+import json
 import qrcode
 from io import BytesIO
 from django.http import HttpResponse
@@ -7,8 +8,10 @@ from rest_framework import status, generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializer import ShiftSerializer
-from .models import Break, Shift
+from gps.models import GpsPoint
+
+from .serializer import PlannedShiftSerializer, ShiftSerializer
+from .models import Break, PlannedShift, PlannedShiftPoint, Shift
 import hashlib
 from trucks.models import Truck 
 from datetime import datetime, timezone
@@ -152,15 +155,15 @@ def get_user_today_work_time(request):
     datenow = datetime.now(timezone.utc)
     total_time = datenow - datenow
     for shift in shifts:
-        if shift.start_time.month == datetime.now().today:
-            if shift.end_time is None:
-                total_time += datetime.now(timezone.utc) - shift.start_time
-            else:
-                total_time += shift.end_time - shift.start_time
-    print(total_time)
+        if shift.end_time is None:
+            total_time += datetime.now(timezone.utc) - shift.start_time
+        else:
+            total_time += shift.end_time - shift.start_time
+    total_seconds = total_time.total_seconds()
+    print(total_seconds)
     if total_time.total_seconds() < 0:
         return Response({0.0}, status=status.HTTP_200_OK)
-    return Response({total_time.total_seconds()}, status=status.HTTP_200_OK)
+    return Response({total_seconds}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def start_break(request):
@@ -181,11 +184,13 @@ def stop_break(request):
     except Shift.DoesNotExist:
         return Response({"error":"Shift not found"},status=status.HTTP_404_NOT_FOUND)
     try:
-        break_time = Break.objects.get(shift=shift, end_time=None)
+        break_time = Break.objects.filter(shift=shift, end_time=None)
     except Break.DoesNotExist:
         return Response({"error":"Break not found"},status=status.HTTP_404_NOT_FOUND)
-    break_time.end_time = datetime.now()
-    break_time.save()
+    print(break_time)
+    for break_time in break_time:
+        break_time.end_time = datetime.now()
+        break_time.save()
     return Response({"success":"Break ended"},status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -196,10 +201,107 @@ def is_break(request):
     except Shift.DoesNotExist:
         return Response({"error":"Shift not found"},status=status.HTTP_404_NOT_FOUND)
     try:
-        break_time = Break.objects.get(shift=shift, end_time=None)
+        break_time = Break.objects.filter(shift=shift, end_time=None)
+        print(break_time)
     except Break.DoesNotExist:
         return Response({"is_break": False}, status=status.HTTP_200_OK)
-    return Response({"is_break":True},status=status.HTTP_200_OK)
+    if break_time:
+        return Response({"is_break": True}, status=status.HTTP_200_OK)
+    else:
+        return Response({"is_break": False}, status=status.HTTP_200_OK)
+
+
+
+
+@api_view(['POST'])
+def create_planned_shift(request):
+    username = request.data.get('username')
+    truck_qr = request.data.get('truck_qr')
+    points = request.data.get('points')  # Expected to be an ordered list
+    start_date = request.data.get('start_date')
+    end_date = request.data.get('end_date')
+
+    # Validate required fields
+    if not all([username, truck_qr, points, start_date, end_date]):
+        return Response({"error": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Parse datetime fields
+    try:
+        print(start_date)
+        print(end_date)
+        start_date = datetime.fromisoformat(start_date)
+        end_date = datetime.fromisoformat(end_date)
+    except ValueError:
+        return Response({"error": "Invalid date format. Use ISO 8601 format."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Retrieve the truck
+    try:
+        truck = Truck.objects.get(qr_code=truck_qr)
+    except Truck.DoesNotExist:
+        return Response({"error": "Truck not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Create the planned shift
+    planned_shift = PlannedShift.objects.create(
+        username=username,
+        truck=truck,
+        start_time=start_date,
+        end_time=end_date
+    )
+    try:
+        points = json.loads(points)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding points: {e}")
+
+    print(points)
+    # Add points with order
+    for index, point_qr in enumerate(points):
+        try:
+            gps_point = GpsPoint.objects.get(qr_code=point_qr)
+            # Create intermediary model instance with the order
+            PlannedShiftPoint.objects.create(
+                planned_shift=planned_shift,
+                gps_point=gps_point,
+                order=index
+            )
+        except GpsPoint.DoesNotExist:
+            planned_shift.delete()
+            return Response(
+                {"error": f"GPS point with QR code '{point_qr}' not found. Deleting planned shif"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    return Response({"success": "Planned shift created."}, status=status.HTTP_201_CREATED)
+
+# {
+#   "username": "john_doe",
+#   "truck_qr": "TRUCK123QR",
+#   "points": ["GPS1QR", "GPS2QR", "GPS3QR"],
+#   "start_date": "2024-11-25T08:00:00",
+#   "end_date": "2024-11-25T17:00:00"
+# }
+
+@api_view(['POST'])
+def get_user_planned_shifts(request):
+    username = request.data.get('username')
+    try:
+        # Filter planned shifts by the username
+        planned_shifts = PlannedShift.objects.filter(username=username).order_by('start_time')
+
+        # If no planned shifts exist, return an appropriate message
+        if not planned_shifts.exists():
+            return Response(
+                {"message": "No planned shifts found for this user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize the planned shifts
+        serializer = PlannedShiftSerializer(planned_shifts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 

@@ -12,4 +12,6 @@ urlpatterns = [
     path('startbr/', views.start_break, name = 'start_break'),
     path('stopbr/', views.stop_break, name = 'stop_break'),
     path('break/', views.is_break, name = 'is_break'),
+    path('create-planned-shift/', views.create_planned_shift, name='create_future_shift'),
+    path('get-user-planned-shift/', views.get_user_planned_shifts, name='get_future_shifts'),
 ]

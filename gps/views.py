@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime
 import hashlib
+import os
 import uuid
 import qrcode
 from io import BytesIO
@@ -22,7 +23,7 @@ def generate_name_hash(name: str) -> str:
     sha256_hash = hashlib.sha256()
     sha256_hash.update(name_bytes)
     hash_bytes = sha256_hash.digest()
-    hash_base64 = base64.b64encode(hash_bytes).decode('utf-8')
+    hash_base64 = base64.urlsafe_b64encode(hash_bytes).decode('utf-8')
     
     return str(hash_base64[:10])
 
@@ -51,7 +52,29 @@ def create_gps_point(request):
     except Exception as e:
         return Response({str(e)},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    return Response({"succes":"Point created"},status=status.HTTP_201_CREATED) 
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+
+    qr.add_data(point.qr_code)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    img_bytes = BytesIO()
+    img.save(img_bytes)
+
+    media_path = "media_points"
+    if not os.path.exists(media_path):
+        os.makedirs(media_path)
+    
+    img.save(os.path.join(media_path, f"{point.qr_code}.png"))
+    img_bytes.seek(0)
+
+    return HttpResponse(img_bytes, content_type="image/png")
+    
 
 
 @api_view(['POST'])
