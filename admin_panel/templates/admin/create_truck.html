@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Create New Truck</h1>
+<form id="truck-form">
+    {% csrf_token %}
+    <div>
+        <label for="name">Truck Name:</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+        <label for="mileage">Mileage:</label>
+        <input type="number" id="mileage" name="mileage" required>
+    </div>
+    <button type="button" id="submit-btn">Create Truck</button>
+</form>
+<div id="qr-code-container" style="margin-top: 20px; display: none;">
+    <h2>Truck Created Successfully!</h2>
+    <img id="qr-code" alt="Truck QR Code">
+    <p><a href="{% url 'view_truck_qr_codes' %}">View All Trucks</a></p>
+</div>
+
+<script>
+    document.getElementById('submit-btn').addEventListener('click', function () {
+        const name = document.getElementById('name').value;
+        const mileage = document.getElementById('mileage').value;
+
+        if (!name || !mileage) {
+            alert('Please fill in all fields.');
+            return;
+        }
+
+        // Make API call to create the truck
+        fetch('/api/truck/create/', {  // Replace with your actual API endpoint
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                name: name,
+                milage: mileage
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to create truck');
+            }
+            return response.blob();  // Expecting QR code as a blob
+        })
+        .then(blob => {
+            // Display the QR code
+            const qrCodeImg = document.getElementById('qr-code');
+            qrCodeImg.src = URL.createObjectURL(blob);
+            document.getElementById('qr-code-container').style.display = 'block';
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Error creating truck: ' + error.message);
+        });
+    });
+</script>
+{% endblock %}

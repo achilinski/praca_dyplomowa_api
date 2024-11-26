@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<a href="{% url 'create_gps_point' %}" class="button">Create New GPS Point</a>
+<a href="{% url 'view_truck_qr_codes' %}" class="button">View Truck QR Codes</a>
+<a href="{% url 'create_truck' %}" class="button">Create New Truck</a>
+
+<h1>Admin Statistics</h1>
+
+<h2>User Statistics</h2>
+<table>
+    <tr>
+        <th>Username</th>
+        <th>Total Shifts</th>
+        <th>Total Working Hours</th>
+        <th>Total Break Hours</th>
+    </tr>
+    {% for username, stats in user_stats.items %}
+    <tr>
+        <td><a href="{% url 'user_shifts' username=username %}">{{ username }}</a></td>
+        <td>{{ stats.total_shifts }}</td>
+        <td>{{ stats.total_working_hours|floatformat:2 }}</td>
+        <td>{{ stats.total_break_hours|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Truck Statistics</h2>
+<table>
+    <tr>
+        <th>Truck Name</th>
+        <th>Total Mileage</th>
+        <th>Total Shifts</th>
+        <th>Total Working Hours</th>
+    </tr>
+    {% for truck_name, stats in truck_stats.items %}
+    <tr>
+        <td>{{ truck_name }}</td>
+        <td>{{ stats.total_mileage }}</td>
+        <td>{{ stats.total_shifts }}</td>
+        <td>{{ stats.total_working_hours|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

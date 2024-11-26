@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>All Truck QR Codes</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Truck Name</th>
+            <th>Mileage</th>
+            <th>QR Code</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for truck in trucks %}
+        <tr>
+            <td>{{ truck.name }}</td>
+            <td>{{ truck.mileage }}</td>
+            <td>
+                <img src="{{ truck.qr_code_path }}" alt="QR Code for {{ truck.name }}" width="150" height="150">
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

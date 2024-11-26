@@ -1,0 +1,82 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Create GPS Point</h1>
+<div id="map" style="height: 500px; margin-bottom: 20px;"></div>
+
+<div>
+    <label for="name">Point Name (Optional):</label>
+    <input type="text" id="name">
+</div>
+<button id="submit" type="button">Create GPS Point</button>
+
+<!-- Include Leaflet.js -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    // Initialize the map
+    var map = L.map('map').setView([51.505, -0.09], 13); // Default view
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+
+    // Add a marker
+    var marker;
+    var selectedLat, selectedLng;
+
+    // Add click event to the map
+    map.on('click', function(e) {
+        selectedLat = e.latlng.lat;
+        selectedLng = e.latlng.lng;
+
+        // Add or update the marker
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        marker = L.marker([selectedLat, selectedLng]).addTo(map);
+    });
+
+    // Handle form submission
+    document.getElementById('submit').addEventListener('click', function() {
+        if (!selectedLat || !selectedLng) {
+            alert('Please select a location on the map.');
+            return;
+        }
+
+        var name = document.getElementById('name').value;
+
+        // Send the data to the create_gps_point API
+        fetch('/api/gps/create/', {  // Update this URL to your API endpoint
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                lat: selectedLat,
+                long: selectedLng,
+                name: name || null,
+            }),
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.blob(); // Expecting an image blob (QR code)
+            } else {
+                throw new Error('Failed to create GPS point.');
+            }
+        })
+        .then(blob => {
+            // Display the generated QR code
+            var img = document.createElement('img');
+            img.src = URL.createObjectURL(blob);
+            document.body.appendChild(img);
+            alert('GPS point created successfully!');
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Error creating GPS point: ' + error.message);
+        });
+    });
+</script>
+{% endblock %}

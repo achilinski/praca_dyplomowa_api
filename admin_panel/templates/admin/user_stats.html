@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>User Statistics</h1>
+
+<form method="get" action="" class="mb-4">
+    <div class="row">
+        <div class="col-md-6">
+            <input type="text" class="form-control" name="username" value="{{ username_filter }}" placeholder="Filter by Username">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </div>
+</form>
+
+{% include "admin/table.html" %}
+{% endblock %}

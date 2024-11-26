@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 
+import os
 from pathlib import Path
 import environ
 
@@ -32,7 +33,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Application definition
 
 INSTALLED_APPS = [
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'channels',
     'chat',
+    'admin_panel',
 ]
 
 MIDDLEWARE = [
@@ -72,7 +75,7 @@ ROOT_URLCONF = "testapi.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "admin_panel/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

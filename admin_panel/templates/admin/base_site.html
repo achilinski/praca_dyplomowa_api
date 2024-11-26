@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        nav {
+            background-color: #1e1e1e;
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .btn {
+            background-color: #333;
+            color: #ffffff;
+            border: none;
+        }
+        .btn:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'user_stats' %}" class="text-decoration-none">User Statistics</a>
+        <a href="{% url 'truck_stats' %}" class="text-decoration-none">Truck Statistics</a>
+        <a href="{% url 'create_truck' %}" class="text-decoration-none">Create New Truck</a>
+        <a href="{% url 'create_gps_point' %}" class="text-decoration-none">Add Location</a>
+        <a href="{% url 'view_truck_qr_codes' %}" class="text-decoration-none">QR Codes</a>
+    </nav>
+    <div class="container mt-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>
